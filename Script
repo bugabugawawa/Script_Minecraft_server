@@ -1,0 +1,54 @@
+#!/bin/bash
+SERVER=/home/webwhatsvm/Server/
+SCREEN_TELA="minecraft"
+BACKUP_PATH=/home/webwhatsvm/Backups/
+WORLD_NAME="world"
+
+start_server(){
+	cd $SERVER; screen -m -d -S $SCREEN_TELA java -server -Xmx6G -Xms6G -jar forge-1.12.2-14.23.5.2847-universal.jar nogui
+}
+
+alive_test(){
+SERVICE="java"
+	if pgrep -x "$SERVICE" >/dev/null
+	then
+	    echo "$SERVICE is running"
+	else
+	    echo "$SERVICE stopped"
+	    # uncomment to start nginx if stopped
+	    # systemctl start nginx
+	    # mail  
+	fi
+}
+
+backup_server(){
+	BACKUPTIME=`date +%b-%d-%y-%T`
+	screen -S $SCREEN_TELA -p 0 -X stuff "`printf "save-all\r"`";
+	sleep 10;
+	tar cvzf $BACKUP_PATH/$BACKUPTIME.tgz $SERVER/world
+}
+
+delete_older_saves(){
+        PATH=/home/webwhatsvm/Backups/*
+        find $PATH -mtime +4 -exec rm {} \;
+}   
+
+stop_server(){
+	screen -S $SCREEN_TELA -p 0 -X stuff "`printf "say O server sera reiniciado em 15s...\r"`";
+	sleep 15;
+	screen -S $SCREEN_TELA -p 0 -X stuff "`printf "stop\r"`";
+}
+
+if [ $# -gt 0 ]
+then 
+	case $1 in
+	"start")
+		start_server;;
+	"stop")
+		stop_server;;
+	"backup")
+                backup_server;;
+	esac
+fi
+
+#screen -r -X stuff "`printf "say teste\r"`"
